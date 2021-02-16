@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+
+PIDS=""
+function finish {
+    EXIT_CODE=$?
+    kill $PIDS >/dev/null 2>&1
+    exit $EXIT_CODE
+}
+trap finish SIGINT SIGTERM EXIT
+
+# Read the config file
+typeset -A CONFIG # init array
+CONFIG=( # set default values in config array
+    [randomize]="0"
+    [transform]="0"
+    [wait]="0"
+)
+
+CONFIG_FILE="/MEDIA/config.txt"
+if [ -f "$CONFIG_FILE" ]; then
+  echo "Reading config file $CONFIG_FILE"
+  while read LINE
+  do
+      echo "Config line: $line"
+      if echo $LINE | grep -F = &>/dev/null
+      then
+          CONFIG_KEY=$(echo "$LINE" | cut -d '=' -f 1)
+          CONFIG_VALUE=$(echo "$LINE" | cut -d '=' -f 2-)
+          CONFIG[$CONFIG_KEY]="$CONFIG_VALUE"
+          echo "K:$CONFIG_KEY -> V:$CONFIG_VALUE V2:${CONFIG[$CONFIG_KEY]}"
+      fi
+  done < "$CONFIG_FILE"
+else
+  echo "Config file ${config[randomize]} not found."
+fi
+
+if [ ! -z "$INVOCATION_ID" ]; then
+  # Running as systemd service
+  if [ -n "${CONFIG[wait]}" ] && [ "${CONFIG[wait]}" -eq "${CONFIG[wait]}" ] && [ "${CONFIG[wait]}" -ge 0 ] 2>/dev/null; then
+    sleep "${CONFIG[wait]}"
+  fi
+fi
+
+VLC_OPTS=(
+  "--quiet"
+  "--intf=telnet"
+  "--telnet-password=pi-player-lite"
+  "--logfile=/MEDIA/log.txt"
+  "--playlist-tree"
+  "--no-osd"
+  "--mmal-layer=1"
+  "--fullscreen"
+  "--loop"
+)
+VLC_PATH="/MEDIA"
+if [ -f "${VLC_PATH}/autoplay.m3u" ]
+then
+    VLC_PATH="${VLC_PATH}/autoplay.m3u"
+else
+    VLC_PATH="/MEDIA"
+fi
+
+# Randomize playlist?
+if [ ${CONFIG[randomize]} -eq 1 ]
+then
+    VLC_OPTS+=("--random")
+fi
+
+if [ ${CONFIG[transform]} = "90" ] \
+  || [ ${CONFIG[transform]} = "180" ] \
+  || [ ${CONFIG[transform]} = "270" ] \
+  || [ ${CONFIG[transform]} = "hflip" ] \
+  || [ ${CONFIG[transform]} = "vflip" ] \
+  || [ ${CONFIG[transform]} = "transpose" ] \
+  || [ ${CONFIG[transform]} = "antitranspose" ]
+then
+  VLC_OPTS+=("--mmal-vout-transform=${CONFIG[transform]}")
+fi
+
+echo "Configuration:"
+for i in "${!CONFIG[@]}"; do printf "%s=%s\n" "$i" "${CONFIG[$i]}"; done
+
+# Let VLC display a background on MMAL layer 0; the video player will use layer 1
+SCRIPT=$(readlink -f "$0")
+SCRIPT_DIR="$( cd "${SCRIPT%/*}" >/dev/null 2>&1 && pwd )"
+BG_IMAGE="$SCRIPT_DIR/bg.png"
+cvlc --mmal-layer=0 --no-osd --fullscreen --loop "$BG_IMAGE" >/dev/null 2>&1 &
+PID_BGLVC="$!"
+PIDS="$PIDS $PID_BGVLC"
+
+echo
+echo "Starting the media player:"
+VLC="cvlc"
+echo "$VLC" "${VLC_OPTS[@]}" "${VLC_PATH}"
+
+"$VLC" "${VLC_OPTS[@]}" "${VLC_PATH}" >/dev/null 2>&1 &
+PID_VLC="$!"
+PIDS="$PIDS $PID_VLC"
+
+wait $PID_VLC

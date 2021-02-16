@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# 
+set -e
+
+# cd into script directory
+cd "${0%/*}"
+
+# Update system
+apt update
+apt upgrade -y
+
+# Install media players 
+apt install --no-install-recommends -y \
+  pulseaudio \
+  pulseaudio-utils \
+  vlc \
+  '' # dummy entry to terminate the list
+
+# Disable overscan and raise GPU memory
+cat >> /boot/config.txt << EOF
+[all]
+disable_overscan=1
+gpu_mem=128
+hdmi_drive=2
+EOF
+
+# Create destination folder and copy script and resource file(s)
+DESTINATION="/opt/pi-player-lite"
+install -d "${DESTINATION}"
+install run "${DESTINATION}"
+install -m 644 bg.png "${DESTINATION}"
+
+# Setup systemd services
+PI_USER_NAME=`logname`
+PI_USER_ID=`id -u "$PI_USER_NAME"` 
+install -m 644 -t /etc/systemd/system MEDIA.mount
+install -m 644 -t /etc/systemd/user *.service
+systemctl daemon-reload
+systemctl reenable MEDIA.mount
+sudo -u "$PI_USER_NAME" XDG_RUNTIME_DIR=/run/user/`id -u "$PI_USER_ID"` systemctl --user reenable pi-player-lite
+loginctl enable-linger "$PI_USER_NAME"
+
+echo
+echo "Please reboot to complete the installation"

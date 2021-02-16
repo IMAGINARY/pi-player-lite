@@ -1,0 +1,10 @@
+[Unit]
+Before=local-fs.target
+
+[Mount]
+Where=/MEDIA
+What=/dev/disk/by-label/MEDIA
+Options=defaults,user,umask=0000,ro
+
+[Install]
+RequiredBy=local-fs.target
