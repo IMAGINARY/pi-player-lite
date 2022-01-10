@@ -7,6 +7,8 @@ Before=sound.target
 Type=notify
 ExecStart=/usr/bin/pulseaudio --verbose --daemonize=no
 ExecStartPost=/usr/bin/pactl load-module module-alsa-sink
+ExecStartPost=/usr/bin/pactl load-module module-combine-sink sink_name=combined
+ExecStartPost=/usr/bin/pactl set-default-sink combined
 Restart=on-failure
 
 [Install]
