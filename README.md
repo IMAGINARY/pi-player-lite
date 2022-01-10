@@ -21,7 +21,7 @@ With the Raspberry Pi connected to the internet:
 - Execute the install script:
 
 ```
-wget https://github.com/IMAGINARY/pi-player-lite/releases/download/v1.0.0/install.sh
+wget https://github.com/IMAGINARY/pi-player-lite/releases/download/v1.1.0/install.sh
 chmod +x install.sh
 sudo ./install.sh
 ```
