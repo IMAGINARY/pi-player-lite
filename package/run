@@ -48,6 +48,7 @@ VLC_OPTS=(
   "--logfile=/MEDIA/log.txt"
   "--playlist-tree"
   "--no-osd"
+  "--vout=mmal_vout"
   "--mmal-layer=1"
   "--fullscreen"
   "--loop"

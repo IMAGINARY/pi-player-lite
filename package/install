@@ -15,8 +15,17 @@ apt install --no-install-recommends -y \
   pulseaudio \
   pulseaudio-utils \
   pavucontrol \
-  vlc \
+  vlc=3.0.17.4-0+deb10u2+rpt1 \
+  vlc-bin=3.0.17.4-0+deb10u2+rpt1 \
+  libvlc-bin=3.0.17.4-0+deb10u2+rpt1 \
+  vlc-plugin-base=3.0.17.4-0+deb10u2+rpt1 \
+  vlc-data=3.0.17.4-0+deb10u2+rpt1 \
+  vlc-plugin-qt=3.0.17.4-0+deb10u2+rpt1 \
+  vlc-plugin-video-output=3.0.17.4-0+deb10u2+rpt1 \
   '' # dummy entry to terminate the list
+
+# Pin VLC version
+apt-mark hold vlc
 
 # Disable overscan and raise GPU memory
 cat >> /boot/config.txt << EOF
